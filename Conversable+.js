@@ -51,11 +51,11 @@ let contacts_list = [
 const SETTINGS = {
   BG_COLOR: "#151515",
   BG_IMAGE: {
-    SHOW_BG: true,
+    SHOW_BG: false,
     IMAGE_PATH: "bg.png",
   },
   BG_OVERLAY: {
-    SHOW_OVERLAY: true,
+    SHOW_OVERLAY: false,
     OVERLAY_COLOR: "#111111",
     OPACITY: 0.5,
   },
