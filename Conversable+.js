@@ -67,8 +67,10 @@ const SETTINGS = {
   NO_OF_CONTACTS_TO_SHOW: 4,
 };
 
+// initialize contacts
 let contacts = [];
 
+// check if RANDOMIZE_CONTACTS is enabled. If it's set to `true`, randomize the contacts_list array.
 if (SETTINGS.RANDOMIZE_CONTACTS == true) {
   contacts = [...contacts_list]
     .sort(() => 0.5 - Math.random())
@@ -77,17 +79,27 @@ if (SETTINGS.RANDOMIZE_CONTACTS == true) {
   contacts = [...contacts_list].slice(0, SETTINGS.NO_OF_CONTACTS_TO_SHOW);
 }
 
+// A list of all possible actions that can be created using a contact's provided phone number. Feel free to remove any services that you don't need.
 const PHONE_ACTIONS = ["sms", "facetime", "facetime-audio", "call", "whatsapp"];
 
+// A function for creating actions that you see in the Alert Sheet.
 async function CreateAction(contact) {
   let alert = new Alert();
   alert.title = `Start a conversation with ${contact.name}`;
 
   let { phone, email, twitter_id, telegram } = contact;
 
+  // initialize displayName
   let displayName;
+
+  // initialize actions
   let actions = [];
 
+  // Conditionally create an action based on its action type.
+  // Objects will be added to the actions array conditionally. This is required to determine which action index is selected and to open the appropriate URL.
+  // displayName controls the name of the action that you see in the Alert Sheet.
+  // actionUrl controls which URL to be opened when interacting with the Alert Sheet.
+  // This section of the code is extremely repetitive. If anyone is keen to improve it without introducing too much abstraction, please open a Pull Request in the repo.
   if (phone) {
     PHONE_ACTIONS.map((action) => {
       if (action == "sms") {
@@ -153,10 +165,13 @@ async function CreateAction(contact) {
     alert.addAction(displayName);
   }
 
+  // Add a dismiss button to the Alert Sheet.
   alert.addCancelAction("Dismiss");
 
+  // Check if an action is selected.
   let selected = await alert.presentSheet();
 
+  // If an action is selected, open the corresponding URL stored in the actions array.
   if (selected != -1) {
     Safari.open(actions[selected].actionUrl);
   }
@@ -164,6 +179,7 @@ async function CreateAction(contact) {
   return actions;
 }
 
+// A function to download images
 async function getImg(image) {
   let fm = FileManager.iCloud();
   let dir = fm.documentsDirectory();
@@ -178,14 +194,17 @@ async function getImg(image) {
   }
 }
 
+// Get the current Script Name and encode it using encodeURIComponent.
 let scriptName = encodeURIComponent(Script.name());
 
+// A function to create contacts (to be displayed in the widget).
 async function CreateContact(contact, idx, row) {
   let { PHOTO_SIZE, NAME_FONT_SIZE } = SETTINGS;
 
   let contactStack = row.addStack();
   contactStack.layoutVertically();
 
+  // Determine which contact's Alert Sheet to display based on the supplied index queryParameter.
   let uri = `scriptable:///run?scriptName=${scriptName}&index=${idx}`;
 
   contactStack.url = uri;
@@ -215,12 +234,15 @@ async function CreateWidget(contacts) {
   let { BG_COLOR, BG_IMAGE, BG_OVERLAY, PADDING, TITLE_FONT_SIZE } = SETTINGS;
   let w = new ListWidget();
   w.backgroundColor = new Color(BG_COLOR);
+  w.setPadding(PADDING, PADDING, PADDING, PADDING);
 
+  // Show background image if SHOW_BG is set to `true`.
   if (BG_IMAGE.SHOW_BG == true) {
     let bg = await getImg(BG_IMAGE.IMAGE_PATH);
     w.backgroundImage = bg;
   }
 
+  // Show overlay if SHOW_OVERLAY is set to `true`. For light background images, it is recommended that you turn overlay on so that the contact names and text remain legible.
   if (BG_OVERLAY.SHOW_OVERLAY == true) {
     let overlayColor = new Color(
       BG_OVERLAY.OVERLAY_COLOR,
@@ -231,8 +253,6 @@ async function CreateWidget(contacts) {
     gradient.locations = [0, 1];
     w.backgroundGradient = gradient;
   }
-
-  w.setPadding(PADDING, PADDING, PADDING, PADDING);
 
   w.addSpacer();
 
@@ -263,20 +283,23 @@ async function CreateWidget(contacts) {
   return w;
 }
 
+// Store action index
 let idx = args.queryParameters.index;
 
+// Execute only if our script is running in app + has an action selected.
 if (config.runsInApp && idx != -1) {
   CreateAction(contacts[idx]);
-
   Script.complete();
 }
 
+// Execute only if our script is running in app + has no action selected.
 if (config.runsInApp && idx == null) {
   let w = await CreateWidget(contacts);
   w.presentMedium();
   Script.complete();
 }
 
+// Execute only if the script is running in widget mode.
 if (config.runsInWidget) {
   CreateWidget(contacts);
   Script.complete();
